@@ -12,15 +12,15 @@ class Game:
         pygame.display.set_caption('Kill The Goblins')
         self.clock = pygame.time.Clock()
         self.running = True
-        self.font = pygame.font.Font('Arial.ttf', 32)
+        self.font = pygame.font.Font('./Arial.ttf', 32)
 
         # Load spritesheets and images
         self.character_spritesheet = Spritesheet('img/character.png')
         self.terrain_spritesheet = Spritesheet('img/terrain.png')
         self.enemy_spritesheet = Spritesheet('img/enemy.png')
         self.attack_spritesheet = Spritesheet('img/attack.png')
-        self.intro_background = pygame.image.load('./img/introbackground.png')
-        self.go_background = pygame.image.load('./img/gameover.png')
+        self.intro_background = pygame.image.load('img/introbackground.png')
+        self.go_background = pygame.image.load('img/gameover.png')
 
     def createTilemap(self):
         # Create the tilemap based on the tilemap data
