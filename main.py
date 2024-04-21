@@ -21,7 +21,6 @@ class Game:
         self.attack_spritesheet = Spritesheet('img/attack.png')
         self.intro_background = pygame.image.load('./img/introbackground.png')
         self.go_background = pygame.image.load('./img/gameover.png')
-        self.gw_backgrond = pygame.Color('blue')
 
     def createTilemap(self):
         # Create the tilemap based on the tilemap data
@@ -109,8 +108,8 @@ class Game:
         text = self.font.render("You Win!", True, WHITE)
         text_rect = text.get_rect(center=(WIN_WIDTH/2, WIN_HEIGHT/2))
 
-        restart_button = Button(10, WIN_HEIGHT - 60, 120, 50, WHITE, BLACK, 'Restart', 32)
-        quit_button = Button(10, WIN_HEIGHT - 120, 120, 50, WHITE, BLACK, 'Quit', 32)
+        restart_button = Button(10, WIN_HEIGHT - 120, 120, 50, WHITE, BLACK, 'Restart', 32)
+        quit_button = Button(10, WIN_HEIGHT - 60, 120, 50, WHITE, BLACK, 'Quit', 32)
 
         for sprite in self.all_sprites:
             sprite.kill()
@@ -131,7 +130,7 @@ class Game:
             if quit_button.is_pressed(mouse_pos, mouse_pressed):
                 self.running = False
 
-            self.screen.fill(BLUE)
+            self.screen.fill((0, 0, 255))  # Fill the screen with BLUE
             self.screen.blit(text, text_rect)
             self.screen.blit(restart_button.image, restart_button.rect)
             self.screen.blit(quit_button.image, quit_button.rect)
@@ -143,8 +142,8 @@ class Game:
         text = self.font.render('Game Over', True, WHITE)
         text_rect = text.get_rect(center=(WIN_WIDTH/2, WIN_HEIGHT/2))
 
-        restart_button = Button(10, WIN_HEIGHT - 60, 120, 50, WHITE, BLACK, 'Restart', 32)
-        quit_button = Button(10, WIN_HEIGHT - 120, 120, 50, WHITE, BLACK, 'Quit', 32)
+        restart_button = Button(10, WIN_HEIGHT - 120, 120, 50, WHITE, BLACK, 'Restart', 32)
+        quit_button = Button(10, WIN_HEIGHT - 60, 120, 50, WHITE, BLACK, 'Quit', 32)
 
         for sprite in self.all_sprites:
             sprite.kill()
@@ -177,9 +176,10 @@ class Game:
         intro = True
 
         title = self.font.render('Awesome Game', True, BLACK)
-        title_rect = title.get_rect(x=10, y=10)
+        title_rect = title.get_rect(center=(WIN_WIDTH/2, WIN_HEIGHT/2))
 
-        play_button = Button(10, 50, 100, 50, WHITE, BLACK, 'Play', 32)
+        play_button = Button(10, WIN_HEIGHT - 120, 120, 50, WHITE, BLACK, 'Play', 32)
+        quit_button = Button(10, WIN_HEIGHT - 60, 120, 50, WHITE, BLACK, 'Quit', 32)
 
         while intro:
             for event in pygame.event.get():
@@ -191,12 +191,18 @@ class Game:
             mouse_pos = pygame.mouse.get_pos()
             mouse_pressed = pygame.mouse.get_pressed()
 
+            # PLAY THE GAME!!!
             if play_button.is_pressed(mouse_pos, mouse_pressed):
                 intro = False
+
+            # CLOSE THE GAME!!!
+            if quit_button.is_pressed(mouse_pos, mouse_pressed):
+                self.running = False
 
             self.screen.blit(self.intro_background, (0, 0))
             self.screen.blit(title, title_rect)
             self.screen.blit(play_button.image, play_button.rect)
+            self.screen.blit(quit_button.image, quit_button.rect)
             self.clock.tick(FPS)
             pygame.display.update()
 
@@ -205,6 +211,7 @@ class Game:
 g = Game()
 g.intro_screen()
 g.new()
+
 while g.running:
     g.main()
     g.check_win_condition()
