@@ -1,2 +1,3 @@
-press space to attack
-press shift to sprint
+- arrow keys to move
+- space to attack
+- shift to sprint
