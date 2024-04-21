@@ -3,6 +3,8 @@ from config import *
 import math
 import random
 
+IMMUNITY_DURATION = 1000
+
 
 class Spritesheet:
     def __init__(self, file):
@@ -33,7 +35,7 @@ class Player(pygame.sprite.Sprite):
         self.facing = 'down'
         self.animation_loop = 1
 
-        self.image = self.game.character_spritesheet.get_sprite(3, 2, self.width, self.height)
+        self.image = self.game.character_spritesheet.get_sprite(3, 2, self.width, self.height).convert_alpha()
 
         self.rect = self.image.get_rect()
         self.rect.x = self.x
@@ -56,12 +58,21 @@ class Player(pygame.sprite.Sprite):
                             self.game.character_spritesheet.get_sprite(68, 66, self.width, self.height)]
 
         self.health = 3
-        self.invulnerable = False
-        self.invincibility_duration = 1.5  # in seconds
-        self.time_since_hit = 0
-        self.flash_timer = 0
+        self.collision_immune = False
+        self.collision_time = 0
 
     def update(self):
+        if self.collision_immune:
+            time_since_collision = pygame.time.get_ticks() - self.collision_time
+            if time_since_collision > IMMUNITY_DURATION:
+                self.collision_immune = False
+            elif pygame.time.get_ticks() % 50 < 25:  # Flash every 200 milliseconds
+                self.image.set_alpha(0)  # Make the sprite fully transparent
+            else:
+                self.image.set_alpha(255)  # Make the sprite fully opaque
+        else:
+            self.image.set_alpha(255)  # Reset the sprite's transparency when not invulnerable
+
         self.movement()
         self.animate()
         self.collide_enemy()
@@ -73,47 +84,6 @@ class Player(pygame.sprite.Sprite):
 
         self.x_change = 0
         self.y_change = 0
-
-        if self.invulnerable:
-            self.flash_timer += self.game.clock.tick() / 1000.0
-            if self.flash_timer >= 0.1:  # Flash every 0.1 seconds
-                self.flash_timer -= 0.1
-                # Show normal sprite
-                if self.facing == "down":
-                    if self.y_change == 0:
-                        self.image = self.game.character_spritesheet.get_sprite(3, 2, self.width, self.height)
-                    else:
-                        self.image = self.down_animations[math.floor(self.animation_loop)]
-                        self.animation_loop += 0.1
-                        if self.animation_loop >= 3:
-                            self.animation_loop = 1
-
-                if self.facing == "up":
-                    if self.y_change == 0:
-                        self.image = self.game.character_spritesheet.get_sprite(3, 34, self.width, self.height)
-                    else:
-                        self.image = self.up_animations[math.floor(self.animation_loop)]
-                        self.animation_loop += 0.1
-                        if self.animation_loop >= 3:
-                            self.animation_loop = 1
-
-                if self.facing == "left":
-                    if self.x_change == 0:
-                        self.image = self.game.character_spritesheet.get_sprite(3, 98, self.width, self.height)
-                    else:
-                        self.image = self.left_animations[math.floor(self.animation_loop)]
-                        self.animation_loop += 0.1
-                        if self.animation_loop >= 3:
-                            self.animation_loop = 1
-
-                if self.facing == "right":
-                    if self.x_change == 0:
-                        self.image = self.game.character_spritesheet.get_sprite(3, 66, self.width, self.height)
-                    else:
-                        self.image = self.right_animations[math.floor(self.animation_loop)]
-                        self.animation_loop += 0.1
-                        if self.animation_loop >= 3:
-                            self.animation_loop = 1
 
     def movement(self):
         keys = pygame.key.get_pressed()
@@ -147,16 +117,15 @@ class Player(pygame.sprite.Sprite):
             self.facing = 'down'
 
     def collide_enemy(self):
-        if not self.invulnerable:
-            hits = pygame.sprite.spritecollide(self, self.game.enemies, False)
-            if hits:
-                self.health -= 1
-                self.invulnerable = True
-                self.time_since_hit = 0
+        hits = pygame.sprite.spritecollide(self, self.game.enemies, False)
+        if hits and not self.collision_immune:
+            self.game.player.health -= 1
+            self.collision_immune = True
+            self.collision_time = pygame.time.get_ticks()
 
-                if self.health <= 0:
-                    self.kill()
-                    self.game.playing = False
+        if self.health <= 0:
+            self.kill()
+            self.game.playing = False
 
     def collide_blocks(self, direction):
         keys = pygame.key.get_pressed()
@@ -192,42 +161,41 @@ class Player(pygame.sprite.Sprite):
                         sprite.rect.y -= current_speed
 
     def animate(self):
-        if not self.invulnerable or self.flash_timer >= 0.05: # Flash every 0.05 seconds
-            if self.facing == "down":
-                if self.y_change == 0:
-                    self.image = self.game.character_spritesheet.get_sprite(3, 2, self.width, self.height)
-                else:
-                    self.image = self.down_animations[math.floor(self.animation_loop)]
-                    self.animation_loop += 0.1
-                    if self.animation_loop >= 3:
-                        self.animation_loop = 1
+        if self.facing == "down":
+            if self.y_change == 0:
+                self.image = self.game.character_spritesheet.get_sprite(3, 2, self.width, self.height)
+            else:
+                self.image = self.down_animations[math.floor(self.animation_loop)]
+                self.animation_loop += 0.1
+                if self.animation_loop >= 3:
+                    self.animation_loop = 1
 
-            if self.facing == "up":
-                if self.y_change == 0:
-                    self.image = self.game.character_spritesheet.get_sprite(3, 34, self.width, self.height)
-                else:
-                    self.image = self.up_animations[math.floor(self.animation_loop)]
-                    self.animation_loop += 0.1
-                    if self.animation_loop >= 3:
-                        self.animation_loop = 1
+        if self.facing == "up":
+            if self.y_change == 0:
+                self.image = self.game.character_spritesheet.get_sprite(3, 34, self.width, self.height)
+            else:
+                self.image = self.up_animations[math.floor(self.animation_loop)]
+                self.animation_loop += 0.1
+                if self.animation_loop >= 3:
+                    self.animation_loop = 1
 
-            if self.facing == "left":
-                if self.x_change == 0:
-                    self.image = self.game.character_spritesheet.get_sprite(3, 98, self.width, self.height)
-                else:
-                    self.image = self.left_animations[math.floor(self.animation_loop)]
-                    self.animation_loop += 0.1
-                    if self.animation_loop >= 3:
-                        self.animation_loop = 1
+        if self.facing == "left":
+            if self.x_change == 0:
+                self.image = self.game.character_spritesheet.get_sprite(3, 98, self.width, self.height)
+            else:
+                self.image = self.left_animations[math.floor(self.animation_loop)]
+                self.animation_loop += 0.1
+                if self.animation_loop >= 3:
+                    self.animation_loop = 1
 
-            if self.facing == "right":
-                if self.x_change == 0:
-                    self.image = self.game.character_spritesheet.get_sprite(3, 66, self.width, self.height)
-                else:
-                    self.image = self.right_animations[math.floor(self.animation_loop)]
-                    self.animation_loop += 0.1
-                    if self.animation_loop >= 3:
-                        self.animation_loop = 1
+        if self.facing == "right":
+            if self.x_change == 0:
+                self.image = self.game.character_spritesheet.get_sprite(3, 66, self.width, self.height)
+            else:
+                self.image = self.right_animations[math.floor(self.animation_loop)]
+                self.animation_loop += 0.1
+                if self.animation_loop >= 3:
+                    self.animation_loop = 1
 
 
 class Enemy(pygame.sprite.Sprite):
@@ -276,11 +244,11 @@ class Enemy(pygame.sprite.Sprite):
     def update(self):
         self.movement()
         self.animate()
-        self.rect.x += self.x_change
-        self.rect.y += self.y_change
 
+        # Check for collisions before updating position
         self.rect.x += self.x_change
         self.collide_blocks('x')
+
         self.rect.y += self.y_change
         self.collide_blocks('y')
 
